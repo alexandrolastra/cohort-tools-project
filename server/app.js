@@ -12,7 +12,8 @@ const students = require("./students.json");
 
 // INITIALIZE EXPRESS APP - https://expressjs.com/en/4x/api.html#express
 const app = express();
-
+const Cohort = require("./model/Cohorts.model");
+const Student = require("./model/Students.model");
 // MIDDLEWARE
 // Research Team - Set up CORS middleware here:
 /* app.use(
@@ -40,10 +41,116 @@ mongoose
 // ROUTES - https://expressjs.com/en/starter/basic-routing.html
 // Devs Team - Start working on the routes here:
 
+app.get("/api/cohorts", (req, res) => {
+  Cohort.find()
+    .then((allCohorts) => {
+      res.status(200).json(allCohorts);
+    })
+    .catch((error) => {
+      res.status(500).json({ error });
+    });
+});
+
+app.get("/api/cohorts/:id", (req, res) => {
+  Cohort.findById(req.params.id)
+    .then((cohort) => {
+      res.status(200).json(cohort);
+    })
+    .catch((error) => {
+      res.status(500).json({ error });
+    });
+});
+
+app.put("/api/cohorts/:id", (req, res) => {
+  Cohort.findByIdAndUpdate(req.params.id, req.body)
+    .then((updateCohort) => {
+      res.status(200).json(updateCohort);
+    })
+    .catch((error) => {
+      res.status(500).json({ error });
+    });
+});
+
+app.post("/cohorts", (req, res) => {
+  Cohort.create(req.body)
+    .then((createdCohort) => {
+      res.status(201).json(createdCohort);
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json(error);
+    });
+});
+
+app.delete("/cohorts/:id", (req, res) => {
+  Cohort.findByIdAndDelete(req.params.id)
+    .then(() => {
+      res.status(204).send();
+    })
+    .catch((error) => {
+      console.log(error);
+      res.json(error);
+      res.status(400).json({ error });
+    });
+});
+
+app.get("/api/students", (req, res) => {
+  Student.find()
+    .then((allStudents) => {
+      res.status(200).json(allStudents);
+    })
+    .catch((error) => {
+      res.status(500).json({ error });
+    });
+});
+
+app.get("/api/students/:id", (req, res) => {
+  Student.findById(req.params.id)
+    .then((student) => {
+      res.status(200).json(student);
+    })
+    .catch((error) => {
+      res.status(500).json({ error });
+    });
+});
+
+app.put("/api/students/:id", (req, res) => {
+  Student.findByIdAndUpdate(req.params.id, req.body)
+    .then((updateStudent) => {
+      res.status(200).json(updateStudent);
+    })
+    .catch((error) => {
+      res.status(500).json({ error });
+    });
+});
+
+app.post("/students", (req, res) => {
+  Student.create(req.body)
+    .then((createdStudent) => {
+      res.status(201).json(createdStudent);
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json(error);
+    });
+});
+
+app.delete("/students/:id", (req, res) => {
+  Student.findByIdAndDelete(req.params.id)
+    .then(() => {
+      res.status(204).send();
+    })
+    .catch((error) => {
+      console.log(error);
+      res.json(error);
+      res.status(400).json({ error });
+    });
+});
+
 app.get("/docs", (req, res) => {
   res.sendFile(__dirname + "/views/docs.html");
 });
-app.get("/api/cohorts", (req, res) => {
+app.get("/api/students", (req, res) => {
   res.json(cohorts);
 });
 
