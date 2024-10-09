@@ -48,16 +48,18 @@ app.get("/api/cohorts", (req, res) => {
     })
     .catch((error) => {
       res.status(500).json({ error });
+      
     });
 });
 
-app.get("/api/cohorts/:id", (req, res) => {
+app.get("/api/cohorts/:id", (req, res, next) => {
   Cohort.findById(req.params.id)
     .then((cohort) => {
       res.status(200).json(cohort);
     })
     .catch((error) => {
-      res.status(500).json({ error });
+      next(error)
+      // res.status(500).json({ error });
     });
 });
 
@@ -71,7 +73,7 @@ app.put("/api/cohorts/:id", (req, res) => {
     });
 });
 
-app.post("/cohorts", (req, res) => {
+app.post("api/cohorts", (req, res) => {
   Cohort.create(req.body)
     .then((createdCohort) => {
       res.status(201).json(createdCohort);
@@ -157,6 +159,7 @@ app.get("/api/students", (req, res) => {
 app.get("/api/students", (req, res) => {
   res.json(students);
 });
+require('./error-handling')(app)
 // START SERVER
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
