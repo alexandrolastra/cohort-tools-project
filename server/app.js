@@ -1,10 +1,14 @@
+require("dotenv").config();
 const express = require("express");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const PORT = 5005;
 const cors = require("cors");
 const mongoose = require("mongoose");
-
+const User = require("./model/User.model");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const { isAuthenticated } = require("./middlewares/route-guard.middleware");
 // STATIC DATA
 // Devs Team - Import the provided files with JSON data of students and cohorts here:
 const cohorts = require("./cohorts.json");
@@ -41,6 +45,69 @@ mongoose
 // ROUTES - https://expressjs.com/en/starter/basic-routing.html
 // Devs Team - Start working on the routes here:
 
+// authentification route
+
+app.post("/signup", (req, res, next) => {
+  const userToCreate = req.body;
+  const salt = bcrypt.genSaltSync(13);
+
+  userToCreate.passwordHash = bcrypt.hashSync(req.body.password, salt); //Pay attention
+  User.create(userToCreate)
+    .then((newUser) => {
+      res.status(201).json(newUser);
+    })
+    .catch((error) => {
+      next(error);
+    });
+});
+
+app.post("/login", (req, res, next) => {
+  User.findOne({ email: req.body.email })
+    .then((potentialUser) => {
+      if (potentialUser) {
+        if (bcrypt.compareSync(req.body.password, potentialUser.passwordHash)) {
+          console.log(process.env.TOKEN_SECRET);
+          const authToken = jwt.sign(
+            { userId: potentialUser._id },
+            process.env.TOKEN_SECRET,
+            {
+              algorithm: "HS256",
+              expiresIn: "5h",
+            }
+          );
+          res.json({ token: authToken });
+        } else {
+          res.json({ message: "Incorrect password" });
+        }
+      } else {
+        res.json({ message: "No user with this username" });
+      }
+    })
+    .catch((error) => {
+      next(error);
+    });
+});
+
+app.get("/verify", isAuthenticated, (req, res, next) => {
+  User.findById(req.tokenPayload.userId)
+    .then((currentUser) => {
+      res.json(currentUser);
+    })
+    .catch((error) => {
+      next(error);
+    });
+});
+
+app.get("/api/users/:id", isAuthenticated, (req, res, next) => {
+  const { id } = req.params;
+  User.findById(id)
+    .then((currentUser) => {
+      res.json(currentUser);
+    })
+    .catch((error) => {
+      next(error);
+    });
+});
 app.get("/api/cohorts", (req, res) => {
   Cohort.find()
     .then((allCohorts) => {
@@ -48,7 +115,6 @@ app.get("/api/cohorts", (req, res) => {
     })
     .catch((error) => {
       res.status(500).json({ error });
-      
     });
 });
 
@@ -58,7 +124,7 @@ app.get("/api/cohorts/:id", (req, res, next) => {
       res.status(200).json(cohort);
     })
     .catch((error) => {
-      next(error)
+      next(error);
       // res.status(500).json({ error });
     });
 });
@@ -73,7 +139,7 @@ app.put("/api/cohorts/:id", (req, res) => {
     });
 });
 
-app.post("api/cohorts", (req, res) => {
+app.post("/api/cohorts", (req, res) => {
   Cohort.create(req.body)
     .then((createdCohort) => {
       res.status(201).json(createdCohort);
@@ -152,14 +218,14 @@ app.delete("/students/:id", (req, res) => {
 app.get("/docs", (req, res) => {
   res.sendFile(__dirname + "/views/docs.html");
 });
-app.get("/api/students", (req, res) => {
+app.get("/api/cohorts", (req, res) => {
   res.json(cohorts);
 });
 
 app.get("/api/students", (req, res) => {
   res.json(students);
 });
-require('./error-handling')(app)
+require("./error-handling")(app);
 // START SERVER
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
